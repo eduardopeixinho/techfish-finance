@@ -26,7 +26,7 @@ class MoneyTest extends TestCase
 
         $this->assertSame('R$ 1.234,56', $money->format(1234.56));
         $this->assertSame('R$ 0,00', $money->format(0.0));
-        $this->assertSame('R$ -1.000,00', $money->format(-1000.0));
+        $this->assertSame('R$ −1.000,00', $money->format(-1000.0));
     }
 
     public function test_format_returns_mask_when_hidden(): void

@@ -40,7 +40,7 @@ class FinanceController extends Controller
 
         // Transações recentes
         $recentTransactions = Transaction::forUser($user->id)
-            ->with(['account', 'category'])
+            ->with(['account', 'category', 'transferAccount'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->limit(10)

@@ -13,16 +13,18 @@ namespace App\Support;
  *  - Sempre em PT-BR (BRL, vírgula decimal, ponto de milhar).
  *  - Explicitar unidades (R$) — nunca confiar em cast silencioso.
  *  - Métodos puros, sem dependência de request/session (testáveis direto).
+ *  - Negativo usa o sinal de menos tipográfico (−, U+2212) em todos os formatos de R$,
+ *    para saldo e variação aparecerem iguais na mesma tela. Exportações (CSV) não passam por aqui.
  */
 class Format
 {
     /**
-     * Formata um valor monetário em BRL completo: "R$ 1.234,56".
+     * Formata um valor monetário em BRL completo: "R$ 1.234,56" / "R$ −1.234,56".
      * Use em saldos, totais, faturas — onde os centavos importam.
      */
     public static function brl(float $valor): string
     {
-        return 'R$ '.number_format($valor, 2, ',', '.');
+        return self::money($valor, 2, '');
     }
 
     /**
@@ -33,20 +35,31 @@ class Format
      */
     public static function brlCompact(float $valor): string
     {
-        return 'R$ '.number_format(round($valor), 0, ',', '.');
+        return self::money(round($valor), 0, '');
     }
 
     /**
-     * Formata um valor com sinal explícito: "R$ +1.234,56" / "R$ -1.234,56".
+     * Formata um valor com sinal explícito: "R$ +1.234,56" / "R$ −1.234,56".
      * Use em deltas, variações mensais, fluxo de caixa — onde a direção
      * do número é tão importante quanto o valor.
      */
     public static function brlSigned(float $valor): string
     {
-        $sinal = $valor > 0 ? '+' : ($valor < 0 ? '−' : '');
+        return self::money($valor, 2, '+');
+    }
 
-        // number_format preserva o sinal; só precisamos prefixar com +/−
-        return 'R$ '.$sinal.number_format(abs($valor), 2, ',', '.');
+    /**
+     * "R$ " + sinal + valor absoluto. Sinal decidido pelo valor já arredondado:
+     * -0,004 vira "R$ 0,00" (e não "R$ −0,00").
+     *
+     * @param  string  $positiveSign  prefixo dos positivos ('' ou '+')
+     */
+    private static function money(float $valor, int $decimals, string $positiveSign): string
+    {
+        $rounded = round($valor, $decimals);
+        $sinal = $rounded > 0 ? $positiveSign : ($rounded < 0 ? '−' : '');
+
+        return 'R$ '.$sinal.number_format(abs($rounded), $decimals, ',', '.');
     }
 
     /**

@@ -193,4 +193,24 @@ class DashboardTest extends TestCase
             ->assertSee('Conta corrente')
             ->assertDontSee('>checking<', false);
     }
+
+    /**
+     * Transferência entre contas próprias não é despesa: aparece neutra, com origem → destino.
+     */
+    public function test_recent_transfer_is_shown_as_transfer_not_expense(): void
+    {
+        $user = User::factory()->create();
+        $checking = Account::factory()->create(['user_id' => $user->id, 'name' => 'Corrente X']);
+        $savings = Account::factory()->create(['user_id' => $user->id, 'name' => 'Reserva Y']);
+        Transaction::factory()->create([
+            'user_id' => $user->id, 'account_id' => $checking->id, 'transfer_account_id' => $savings->id,
+            'type' => 'transfer', 'amount' => 800, 'description' => 'Aporte',
+        ]);
+
+        $this->actingAs($user)->get(route('finance.dashboard'))
+            ->assertOk()
+            ->assertSee('Corrente X → Reserva Y')
+            ->assertDontSee('− R$ 800,00', false)
+            ->assertDontSee('- R$ 800,00', false);
+    }
 }

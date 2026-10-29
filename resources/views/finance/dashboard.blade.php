@@ -138,32 +138,38 @@
                     @else
                         <div class="space-y-4">
                             @foreach($recentTransactions as $transaction)
+                                @php
+                                    // Transferência entre contas próprias não é gasto: cor neutra e sem sinal
+                                    $style = [
+                                        'income' => ['icon' => 'bg-green-500/10 text-green-600', 'amount' => 'text-green-600', 'sign' => '+', 'path' => 'M12 6v6m0 0v6m0-6h6m-6 0H6'],
+                                        'expense' => ['icon' => 'bg-red-500/10 text-red-600', 'amount' => 'text-red-600', 'sign' => '−', 'path' => 'M18 12H6'],
+                                        'transfer' => ['icon' => 'bg-finance-base/10 text-finance-base', 'amount' => 'text-finance-base', 'sign' => '', 'path' => 'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5'],
+                                    ][$transaction->type] ?? ['icon' => 'bg-ink/5 text-ink-2', 'amount' => 'text-ink', 'sign' => '', 'path' => 'M18 12H6'];
+                                @endphp
                                 <div class="flex items-center justify-between p-3 bg-paper rounded-sm border border-finance-base/5">
                                     <div class="flex items-center">
-                                        <div class="w-10 h-10 {{ $transaction->type === 'income' ? 'bg-green-500/10' : 'bg-red-500/10' }} rounded-sm flex items-center justify-center mr-3">
-                                            @if($transaction->type === 'income')
-                                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                </svg>
-                                            @else
-                                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                                    <path d="M18 12H6" />
-                                                </svg>
-                                            @endif
+                                        <div class="w-10 h-10 {{ $style['icon'] }} rounded-sm flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="{{ $style['path'] }}" />
+                                            </svg>
                                         </div>
                                         <div>
                                             <p class="text-sm font-medium text-ink">{{ $transaction->description }}</p>
                                             <p class="text-xs text-ink-2">
-                                                {{ $transaction->account->name }}
-                                                @if($transaction->category)
-                                                    · {{ $transaction->category->name }}
+                                                @if ($transaction->type === 'transfer')
+                                                    {{ $transaction->account->name }} → {{ $transaction->transferAccount?->name ?? 'outra conta' }}
+                                                @else
+                                                    {{ $transaction->account->name }}
+                                                    @if($transaction->category)
+                                                        · {{ $transaction->category->name }}
+                                                    @endif
                                                 @endif
                                             </p>
                                         </div>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-sm font-semibold {{ $transaction->type === 'income' ? 'text-green-600' : 'text-red-600' }} tabular-nums">
-                                            {{ $transaction->type === 'income' ? '+' : '-' }} {{ $money->format((float) $transaction->amount) }}
+                                        <p class="text-sm font-semibold {{ $style['amount'] }} tabular-nums">
+                                            {{ $style['sign'] }} {{ $money->format((float) $transaction->amount) }}
                                         </p>
                                         <p class="text-xs text-ink-2">{{ $transaction->formatted_date }}</p>
                                     </div>

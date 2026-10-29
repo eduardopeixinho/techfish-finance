@@ -19,7 +19,9 @@ class FormatTest extends TestCase
     {
         $this->assertSame('R$ 1.234,56', Format::brl(1234.56));
         $this->assertSame('R$ 0,00', Format::brl(0.0));
-        $this->assertSame('R$ -1.000,00', Format::brl(-1000.0));
+        $this->assertSame('R$ −1.000,00', Format::brl(-1000.0));
+        // Arredondou para zero: sem sinal
+        $this->assertSame('R$ 0,00', Format::brl(-0.004));
     }
 
     public function test_brl_arredonda_para_duas_casas(): void
@@ -34,7 +36,8 @@ class FormatTest extends TestCase
         // 1234.4 arredonda para 1234 (não estoura)
         $this->assertSame('R$ 1.234', Format::brlCompact(1234.4));
         $this->assertSame('R$ 0', Format::brlCompact(0.0));
-        $this->assertSame('R$ -1.000', Format::brlCompact(-1000.4));
+        $this->assertSame('R$ −1.000', Format::brlCompact(-1000.4));
+        $this->assertSame('R$ 0', Format::brlCompact(-0.4));
     }
 
     public function test_brl_compact_arredonda_para_inteiro(): void
@@ -49,6 +52,8 @@ class FormatTest extends TestCase
         // Sinal negativo usa U+2212 (minus sign tipográfico), não hífen
         $this->assertSame('R$ −1.234,56', Format::brlSigned(-1234.56));
         $this->assertSame('R$ 0,00', Format::brlSigned(0.0));
+        // Saldo e variação negativos usam o mesmo sinal
+        $this->assertSame(Format::brl(-11459.40), Format::brlSigned(-11459.40));
     }
 
     public function test_percent_format_com_virgula_decimal(): void

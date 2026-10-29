@@ -50,14 +50,18 @@ class DemoSeeder extends Seeder
         });
     }
 
+    /**
+     * Apaga de verdade (forceDelete) os dados da conta demo, inclusive os já excluídos:
+     * com soft delete, o reset diário deixaria linhas mortas acumulando no banco.
+     */
     private function resetData(User $user): void
     {
-        InvestmentDividend::where('user_id', $user->id)->delete();
-        InvestmentTransaction::where('user_id', $user->id)->delete();
+        InvestmentDividend::withTrashed()->where('user_id', $user->id)->forceDelete();
+        InvestmentTransaction::withTrashed()->where('user_id', $user->id)->forceDelete();
         Investment::withTrashed()->where('user_id', $user->id)->forceDelete();
-        Transaction::where('user_id', $user->id)->delete();
-        Account::where('user_id', $user->id)->delete();
-        FinancialCategory::where('user_id', $user->id)->delete();
+        Transaction::withTrashed()->where('user_id', $user->id)->forceDelete();
+        Account::withTrashed()->where('user_id', $user->id)->forceDelete();
+        FinancialCategory::where('user_id', $user->id)->delete(); // sem soft delete
     }
 
     /**
@@ -101,7 +105,9 @@ class DemoSeeder extends Seeder
 
     /**
      * Seis meses de movimento: salário e contas fixas na conta corrente,
-     * compras no cartão (com fatura por competência) e um aporte mensal na reserva.
+     * compras no cartão (com fatura por competência), um aporte mensal na reserva e
+     * o pagamento de cada fatura já vencida (transferência da corrente para o cartão),
+     * para o saldo do cartão mostrar só o que está em aberto.
      *
      * @param  array<string, Account>  $accounts
      * @param  array<string, FinancialCategory>  $categories
@@ -138,11 +144,26 @@ class DemoSeeder extends Seeder
                 'competency_date' => $month->toDateString(), 'bill_identifier' => $month->format('m/Y'),
                 'due_date' => $month->copy()->addMonth()->day(10)->toDateString(),
             ];
-            $add($card + ['description' => 'Supermercado', 'amount' => round(980 * $variation, 2), 'type' => 'expense', 'transaction_date' => $day(8), 'category_id' => $categories['Mercado']->id]);
-            $add($card + ['description' => 'Combustível', 'amount' => round(420 * $variation, 2), 'type' => 'expense', 'transaction_date' => $day(14), 'category_id' => $categories['Transporte']->id]);
-            $add($card + ['description' => 'Farmácia', 'amount' => round(160 * $variation, 2), 'type' => 'expense', 'transaction_date' => $day(17), 'category_id' => $categories['Saúde']->id]);
-            $add($card + ['description' => 'Restaurante', 'amount' => round(260 * $variation, 2), 'type' => 'expense', 'transaction_date' => $day(21), 'category_id' => $categories['Lazer']->id]);
-            $add($card + ['description' => 'Streaming e apps', 'amount' => 89.90, 'type' => 'expense', 'transaction_date' => $day(3), 'category_id' => $categories['Assinaturas']->id]);
+            $purchases = [
+                ['Supermercado', round(980 * $variation, 2), 8, 'Mercado'],
+                ['Combustível', round(420 * $variation, 2), 14, 'Transporte'],
+                ['Farmácia', round(160 * $variation, 2), 17, 'Saúde'],
+                ['Restaurante', round(260 * $variation, 2), 21, 'Lazer'],
+                ['Streaming e apps', 89.90, 3, 'Assinaturas'],
+            ];
+            foreach ($purchases as [$description, $amount, $purchaseDay, $category]) {
+                $add($card + ['description' => $description, 'amount' => $amount, 'type' => 'expense',
+                    'transaction_date' => $day($purchaseDay), 'category_id' => $categories[$category]->id]);
+            }
+
+            // Fatura já vencida: paga no vencimento com transferência da corrente para o cartão (R$)
+            $dueDate = Carbon::parse($card['due_date']);
+            if ($dueDate->lte(Carbon::today())) {
+                $add(['description' => 'Pagamento da fatura '.$card['bill_identifier'], 'type' => 'transfer',
+                    'amount' => round(array_sum(array_column($purchases, 1)), 2), 'transaction_date' => $dueDate->toDateString(),
+                    'account_id' => $accounts['corrente']->id, 'transfer_account_id' => $accounts['cartao']->id,
+                    'payment_method' => 'bank_transfer']);
+            }
         }
     }
 

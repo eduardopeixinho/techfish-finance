@@ -55,12 +55,21 @@ class DemoLoginTest extends TestCase
 
         $this->assertSame(1, User::where('email', config('demo.email'))->count());
         $this->assertSame(3, Account::where('user_id', $demo->id)->count());
+        // O reset apaga de verdade: nada de linhas excluídas acumulando a cada execução
+        $this->assertSame(3, Account::withTrashed()->where('user_id', $demo->id)->count());
+        $this->assertSame(Transaction::where('user_id', $demo->id)->count(), Transaction::withTrashed()->where('user_id', $demo->id)->count());
         $this->assertGreaterThan(40, Transaction::where('user_id', $demo->id)->count());
         $this->assertSame(4, Investment::where('user_id', $demo->id)->count());
 
         // Saldo recalculado a partir das transações (não o inicial)
         $checking = Account::where('user_id', $demo->id)->where('type', 'checking')->firstOrFail();
         $this->assertNotEquals((float) $checking->initial_balance, (float) $checking->current_balance);
+
+        // Faturas vencidas pagas pela corrente: o cartão deve só a fatura aberta (não os 6 meses)
+        $card = Account::where('user_id', $demo->id)->where('type', 'credit_card')->firstOrFail();
+        $openBills = Transaction::where('account_id', $card->id)->where('type', 'expense')
+            ->where('due_date', '>', now()->toDateString())->sum('amount');
+        $this->assertEqualsWithDelta(-(float) $openBills, (float) $card->current_balance, 0.01);
 
         $this->actingAs($demo)->get(route('finance.bills.index'))->assertOk();
         $this->actingAs($demo)->get(route('investment.dashboard'))->assertOk();
