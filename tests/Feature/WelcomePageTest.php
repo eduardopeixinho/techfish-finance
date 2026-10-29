@@ -38,4 +38,28 @@ class WelcomePageTest extends TestCase
             ->get('/')
             ->assertRedirect(route('finance.dashboard'));
     }
+
+    /**
+     * Instância só de demonstração (sem credenciais do Google): o botão do Google some e a rota não quebra.
+     */
+    public function test_google_button_is_hidden_when_not_configured(): void
+    {
+        config(['services.google.enabled' => false, 'demo.enabled' => true]);
+
+        $this->get('/')->assertOk()
+            ->assertDontSee('href="'.route('google.login').'"', false)
+            ->assertSee('Ver demonstração');
+        $this->get(route('login'))->assertOk()->assertDontSee('Entrar com Google');
+
+        $this->get(route('google.login'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('error');
+    }
+
+    public function test_demo_reset_is_scheduled_daily(): void
+    {
+        $this->artisan('schedule:list')
+            ->expectsOutputToContain('db:seed')
+            ->assertSuccessful();
+    }
 }

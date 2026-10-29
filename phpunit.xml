@@ -33,6 +33,8 @@
         <env name="SESSION_DRIVER" value="array" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
         <env name="DEMO_MODE" value="false" force="true"/>
+        <env name="GOOGLE_CLIENT_ID" value="test-client-id" force="true"/>
+        <env name="GOOGLE_CLIENT_SECRET" value="test-client-secret" force="true"/>
         <!--
             Dentro do Docker o container exporta APP_ENV=local, DB_CONNECTION=mysql e *_DRIVER=redis.
             O Laravel lê $_SERVER antes de $_ENV, então <env> sozinho NÃO prevalece: sem estes
@@ -52,5 +54,7 @@
         <server name="SESSION_DRIVER" value="array" force="true"/>
         <server name="TELESCOPE_ENABLED" value="false" force="true"/>
         <server name="DEMO_MODE" value="false" force="true"/>
+        <server name="GOOGLE_CLIENT_ID" value="test-client-id" force="true"/>
+        <server name="GOOGLE_CLIENT_SECRET" value="test-client-secret" force="true"/>
     </php>
 </phpunit>

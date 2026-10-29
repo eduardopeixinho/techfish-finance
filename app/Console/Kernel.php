@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use Database\Seeders\DemoSeeder;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -12,7 +13,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Demonstração pública: a conta demo volta aos dados fictícios todo dia (desfaz o que visitantes mexeram).
+        // Precisa do cron da hospedagem chamando `php artisan schedule:run` a cada minuto.
+        $schedule->command('db:seed', ['--class' => DemoSeeder::class, '--force' => true])
+            ->dailyAt('04:00')
+            ->when(fn (): bool => (bool) config('demo.enabled'))
+            ->withoutOverlapping();
     }
 
     /**

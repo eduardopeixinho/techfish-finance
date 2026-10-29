@@ -2,7 +2,7 @@
 
 Aplicação Laravel de finanças pessoais e carteira de investimentos (projeto de portfólio, open source).
 Login é **exclusivamente** Google OAuth (Socialite), mais um **modo demonstração** opcional (`DEMO_MODE`).
-Stack: Laravel 13, PHP 8.3+ (Docker usa 8.4), MySQL 8, Redis, Vite 5, Tailwind 3, Alpine 3.
+Stack: Laravel 13, PHP 8.4 (local e produção), MySQL 8, Redis, Vite 5, Tailwind 3, Alpine 3.
 Testes com **PHPUnit 12** (não é Pest).
 
 ## Ambiente

@@ -36,6 +36,9 @@ return [
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
 
+        // Sem credenciais (ex.: instância só de demonstração), o botão "Entrar com Google" some.
+        'enabled' => filled(env('GOOGLE_CLIENT_ID')) && filled(env('GOOGLE_CLIENT_SECRET')),
+
         // Domínios de e-mail autorizados (CSV no .env). Vazio = qualquer conta Google.
         // Lido aqui (e não via env() no código) para continuar valendo com `config:cache`.
         'allowed_domains' => array_values(array_filter(array_map(

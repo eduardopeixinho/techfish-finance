@@ -20,8 +20,12 @@ class AuthController extends Controller
     /**
      * Redireciona para o Google
      */
-    public function redirectToGoogle(): SymfonyRedirectResponse
+    public function redirectToGoogle(): SymfonyRedirectResponse|RedirectResponse
     {
+        if (! config('services.google.enabled')) {
+            return redirect()->route('login')->with('error', 'O login com Google não está configurado nesta instalação.');
+        }
+
         return Socialite::driver('google')->redirect();
     }
 

@@ -6,6 +6,7 @@ use App\Models\Investment\Investment;
 use App\Models\Investment\InvestmentTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /**
@@ -34,7 +35,7 @@ class InvestmentPositionTest extends TestCase
     /**
      * @param  array<string, mixed>  $overrides
      */
-    private function trade(string $type, int $quantity, float $price, string $date, float $fees = 0, array $overrides = []): \Illuminate\Testing\TestResponse
+    private function trade(string $type, int $quantity, float $price, string $date, float $fees = 0, array $overrides = []): TestResponse
     {
         return $this->actingAs($this->user)->post(route('investment.transactions.store'), array_merge([
             'investment_id' => $this->investment->id,

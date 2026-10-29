@@ -144,15 +144,15 @@ class InvestmentTransactionController extends Controller
 
         DB::transaction(function () use ($transaction, $validated, $totalAmount, $fees, $netAmount, $investment, $previousInvestment): void {
             $transaction->update([
-            'investment_id' => $validated['investment_id'],
-            'type' => $validated['type'],
-            'quantity' => $validated['quantity'],
-            'price' => $validated['price'],
-            'total_amount' => $totalAmount,
-            'fees' => $fees,
-            'net_amount' => $netAmount,
-            'transaction_date' => $validated['transaction_date'],
-            'notes' => $validated['notes'] ?? null,
+                'investment_id' => $validated['investment_id'],
+                'type' => $validated['type'],
+                'quantity' => $validated['quantity'],
+                'price' => $validated['price'],
+                'total_amount' => $totalAmount,
+                'fees' => $fees,
+                'net_amount' => $netAmount,
+                'transaction_date' => $validated['transaction_date'],
+                'notes' => $validated['notes'] ?? null,
             ]);
 
             $this->positions->recalculate($investment);

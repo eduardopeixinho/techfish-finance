@@ -1,5 +1,10 @@
 # TechFish Finance
 
+[![tests](https://github.com/eduardopeixinho/techfish-finance/actions/workflows/tests.yml/badge.svg)](https://github.com/eduardopeixinho/techfish-finance/actions/workflows/tests.yml)
+![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
+![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green)
+
 Gestão de **finanças pessoais** e **carteira de investimentos** em Laravel: contas, transações,
 faturas de cartão por competência, proventos e relatórios — com os dados de cada usuário isolados.
 
@@ -57,7 +62,7 @@ Para refazer as imagens (com o app rodando e `DEMO_MODE=true`): `scripts/screens
 
 | Camada | Tecnologia |
 |---|---|
-| Backend | PHP 8.3+ (Docker: 8.4), Laravel 13 |
+| Backend | PHP 8.4, Laravel 13 |
 | Frontend | Blade, Tailwind CSS 3, Alpine.js 3, Vite 5 |
 | Banco | MySQL 8 · testes em SQLite em memória |
 | Cache/sessão/fila | Redis |
@@ -90,7 +95,7 @@ Abra a aplicação e clique em **Ver demonstração**. Não é preciso configura
 
 1. Crie credenciais OAuth no [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
 2. Adicione `http://localhost:8000/auth/google/callback` como URI de redirecionamento.
-3. Preencha `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no `.env`.
+3. Preencha `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no `.env`. Sem eles, o botão "Entrar com Google" não aparece.
 4. Opcional: `GOOGLE_ALLOWED_DOMAINS` (CSV) restringe quem pode entrar.
 5. Depois do primeiro login, `docker compose exec app php artisan db:seed --class=RolePermissionSeeder`
    torna o primeiro usuário real administrador.
@@ -100,6 +105,8 @@ Abra a aplicação e clique em **Ver demonstração**. Não é preciso configura
 - `DEMO_MODE=true` mostra o botão "Ver demonstração" na página inicial e no login.
 - `php artisan db:seed --class=DemoSeeder` cria (ou **reseta**) a conta demo com seis meses de dados
   fictícios. A conta demo não pode ser editada, excluída nem virar administradora.
+- Com `DEMO_MODE=true`, o agendador do Laravel reseta a conta demo todo dia às 04:00 (precisa do cron
+  `* * * * * php artisan schedule:run`).
 - Em produção, deixe `DEMO_MODE=false` se não quiser uma conta compartilhada.
 
 ## Testes
@@ -107,6 +114,8 @@ Abra a aplicação e clique em **Ver demonstração**. Não é preciso configura
 ```bash
 docker compose exec app php artisan test
 ```
+
+No GitHub, a suíte e o Pint rodam a cada push e pull request (`.github/workflows/tests.yml`).
 
 ## Estrutura
 

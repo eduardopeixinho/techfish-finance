@@ -1,0 +1,39 @@
+# Testes e padrão de código a cada push/PR.
+# A suíte roda sem .env, MySQL nem Redis: o phpunit.xml força SQLite em memória e traz uma APP_KEY de teste.
+# Os assets compilados (public/build) estão versionados, então não precisa de Node.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, bcmath, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Cache do Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Padrão de código (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Testes (PHPUnit)
+        run: vendor/bin/phpunit
