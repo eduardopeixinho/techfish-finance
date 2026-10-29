@@ -12,6 +12,9 @@ faturas de cartão por competência, proventos e relatórios — com os dados de
 > per-user data isolation, credit card bills by accrual month, dividend tracking and reports.
 > Includes a one-click demo mode with fictional data.*
 
+**▶ Demonstração online: [finance.eduardopeixinho.com](https://finance.eduardopeixinho.com)**. Clique em
+"Ver demonstração" para entrar numa conta com dados fictícios, sem cadastro. Os dados voltam ao estado inicial todo dia.
+
 ![Painel financeiro da conta de demonstração](docs/screenshots/painel.png)
 
 ## Funcionalidades
