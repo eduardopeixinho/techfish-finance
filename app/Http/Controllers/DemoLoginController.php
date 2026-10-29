@@ -23,6 +23,12 @@ class DemoLoginController extends Controller
                 ->with('error', 'Conta de demonstração não encontrada. Rode: php artisan db:seed --class=DemoSeeder');
         }
 
+        // Desativada (antes da proteção no Admin): avisa em vez de entrar e ser derrubado na hora
+        if ($user->isDeactivated()) {
+            return redirect()->route('login')
+                ->with('error', 'A conta de demonstração está desativada. Reative-a em Admin → Usuários.');
+        }
+
         Auth::login($user);
         $request->session()->regenerate();
 

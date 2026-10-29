@@ -7,6 +7,7 @@ use App\Http\Requests\Finance\ReportRequest;
 use App\Models\Finance\Account;
 use App\Models\Finance\Transaction;
 use App\Services\FinanceReportService;
+use App\Services\OnboardingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -56,7 +57,11 @@ class FinanceController extends Controller
         // Evolução mensal (últimos 6 meses) - OTIMIZADO: 1 query ao invés de 12
         $monthlyEvolution = $this->reportService->getMonthlyEvolution($user->id, 6);
 
+        // Primeiros passos (null quando conta, categorias e primeira transação já existem)
+        $onboarding = app(OnboardingService::class)->steps($user);
+
         return view('finance.dashboard', compact(
+            'onboarding',
             'totalBalance',
             'monthlyIncome',
             'monthlyExpenses',

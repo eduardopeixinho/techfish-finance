@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('finance')->name('finance.')->group(function () {
         Route::resource('transactions', TransactionController::class);
         Route::resource('accounts', AccountController::class);
+        Route::post('categories/defaults', [CategoryController::class, 'storeDefaults'])->name('categories.defaults');
         Route::resource('categories', CategoryController::class);
 
         // Rotas de Faturas de Cartão de Crédito

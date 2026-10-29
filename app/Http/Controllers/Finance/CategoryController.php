@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreCategoryRequest;
 use App\Http\Requests\Finance\UpdateCategoryRequest;
 use App\Models\Finance\FinancialCategory;
+use App\Services\OnboardingService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class CategoryController extends Controller
@@ -40,6 +42,18 @@ class CategoryController extends Controller
         FinancialCategory::create($validated);
 
         return redirect()->route('finance.categories.index')->with('success', 'Categoria criada com sucesso!');
+    }
+
+    /**
+     * Primeiros passos: cria num clique as categorias sugeridas que o usuário ainda não tem.
+     */
+    public function storeDefaults(OnboardingService $onboarding): RedirectResponse
+    {
+        $created = $onboarding->createDefaultCategories(Auth::user());
+
+        return redirect()->route('finance.dashboard')->with('success', $created > 0
+            ? "{$created} categorias sugeridas criadas. Você pode editá-las em Categorias."
+            : 'Você já tem todas as categorias sugeridas.');
     }
 
     public function show(FinancialCategory $category)

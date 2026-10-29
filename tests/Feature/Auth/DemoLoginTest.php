@@ -84,4 +84,34 @@ class DemoLoginTest extends TestCase
 
         $this->assertFalse(User::where('email', config('demo.email'))->firstOrFail()->isAdmin());
     }
+
+    /**
+     * Desativar a conta demo derrubaria o botão "Ver demonstração" para todos os visitantes.
+     */
+    public function test_admin_cannot_deactivate_demo_account(): void
+    {
+        $this->seed(DemoSeeder::class);
+        $demo = User::where('email', config('demo.email'))->firstOrFail();
+        $admin = User::factory()->create();
+        $admin->assignRole(\App\Models\Role::factory()->admin()->create());
+
+        $this->actingAs($admin)->patch(route('admin.user-roles.deactivate', $demo))->assertForbidden();
+        $this->actingAs($admin)->get(route('admin.user-roles.index'))
+            ->assertOk()
+            ->assertDontSee(route('admin.user-roles.deactivate', $demo), false);
+
+        $this->assertFalse($demo->fresh()->isDeactivated());
+    }
+
+    public function test_deactivated_demo_account_shows_message_instead_of_login_loop(): void
+    {
+        config(['demo.enabled' => true]);
+        $this->seed(DemoSeeder::class);
+        User::where('email', config('demo.email'))->update(['deactivated_at' => now()]);
+
+        $this->post(route('demo.login'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('error');
+        $this->assertGuest();
+    }
 }

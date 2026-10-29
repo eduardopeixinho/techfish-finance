@@ -63,10 +63,10 @@ class AuthServiceProvider extends ServiceProvider
             return $user->isAdmin();
         });
 
-        // Desativar/reativar usuário: só admin, nunca a si mesmo nem outro admin
+        // Desativar/reativar usuário: só admin, nunca a si mesmo, outro admin ou a conta de demonstração
         // (para desativar um admin, tire antes o perfil de admin dele).
         Gate::define('admin.users.deactivate', function (User $actor, User $target) {
-            return $actor->isAdmin() && $actor->isNot($target) && ! $target->isAdmin();
+            return $actor->isAdmin() && $actor->isNot($target) && ! $target->isAdmin() && ! $target->isDemo();
         });
 
         // Tokens de API (Sanctum) de usuário desativado são recusados.

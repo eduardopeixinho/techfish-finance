@@ -11,6 +11,7 @@ use App\Models\Investment\InvestmentTransaction;
 use App\Models\Investment\InvestmentType;
 use App\Models\User;
 use App\Services\InvestmentPositionService;
+use App\Services\OnboardingService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -64,19 +65,9 @@ class DemoSeeder extends Seeder
      */
     private function seedCategories(User $user): array
     {
-        $definitions = [
-            'Salário' => ['income', '#2F855A'],
-            'Freelance' => ['income', '#38A169'],
-            'Moradia' => ['expense', '#2B6CB0'],
-            'Mercado' => ['expense', '#DD6B20'],
-            'Transporte' => ['expense', '#D69E2E'],
-            'Saúde' => ['expense', '#C53030'],
-            'Lazer' => ['expense', '#805AD5'],
-            'Assinaturas' => ['expense', '#4A5568'],
-        ];
-
+        // Mesmas categorias sugeridas aos usuários novos (primeiros passos)
         $categories = [];
-        foreach ($definitions as $name => [$type, $color]) {
+        foreach (OnboardingService::DEFAULT_CATEGORIES as $name => [$type, $color]) {
             $categories[$name] = FinancialCategory::create([
                 'user_id' => $user->id, 'name' => $name, 'type' => $type, 'color' => $color, 'is_active' => true,
             ]);

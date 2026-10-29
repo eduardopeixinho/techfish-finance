@@ -32,8 +32,10 @@ MySQL e Redis ficam expostos só em `127.0.0.1` (portas 33060 e 63790), para rod
   `EnsureUserIsActive` (grupo `web`) derruba a sessão e o Sanctum recusa os tokens.
   Perfis `is_system` mantêm o slug ao serem renomeados (`User::isAdmin()` depende do slug `admin`).
 - `app/Http/Controllers/AuthController.php` — Google OAuth. `DemoLoginController` — login da conta demo.
-- `app/Services/` — `CreditCardBillService`, `FinanceReportService`, `InvestmentPositionService`, `InvestmentReportService`, `TransactionService`.
+- `app/Services/` — `CreditCardBillService`, `FinanceReportService`, `InvestmentPositionService`, `InvestmentReportService`, `OnboardingService`, `TransactionService`.
   Regra de negócio pesada aqui, **não** em controllers.
+  `OnboardingService`: cartão "Primeiros passos" do painel (conta → categorias → 1ª transação) e as categorias
+  sugeridas (`DEFAULT_CATEGORIES`, rota `finance.categories.defaults`).
 - `app/Http/Requests/{Admin,Finance,Investment}/` — Form Requests. Nunca valide inline no controller.
 - Policies em `app/Policies/` (mapa em `app/Providers/AuthServiceProvider.php`, que também define os gates).
 
@@ -47,7 +49,7 @@ o resto está no grupo `auth`. `/dashboard` redireciona para `/finance/dashboard
 - `GOOGLE_ALLOWED_DOMAINS` (CSV) é lido de `config('services.google.allowed_domains')`. Nunca use `env()` fora de `config/`.
 - **Não reative** `/register`, `POST /login` nem reset de senha.
 - Modo demonstração: `config/demo.php` (`DEMO_MODE`, `DEMO_EMAIL`). O `DemoSeeder` cria/reseta a conta demo com dados
-  fictícios (idempotente). `User::isDemo()`: a conta demo não pode editar o perfil, ser excluída nem virar admin
+  fictícios (idempotente). `User::isDemo()`: a conta demo não pode editar o perfil, ser excluída, ser desativada nem virar admin
   (o `RolePermissionSeeder` ignora a conta demo ao escolher o primeiro admin).
 
 ## Banco de dados e seeders
