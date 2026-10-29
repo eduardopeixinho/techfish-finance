@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CreditCardBillController;
 use App\Http\Controllers\DemoLoginController;
 use App\Http\Controllers\Finance\AccountController;
+use App\Http\Controllers\Finance\BillPaymentController;
 use App\Http\Controllers\Finance\CategoryController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\Settings\AccountTypeController;
@@ -70,6 +71,12 @@ Route::middleware('auth')->group(function () {
 
         // Rotas de Faturas de Cartão de Crédito
         Route::get('bills', [CreditCardBillController::class, 'index'])->name('bills.index');
+        // Pagamento de fatura ("MM-AAAA" = mês do vencimento)
+        Route::post('bills/{account}/{billIdentifier}/payments', [BillPaymentController::class, 'store'])
+            ->where('billIdentifier', '\d{2}-\d{4}')->name('bills.payments.store');
+        Route::post('bills/{account}/{billIdentifier}/mark-paid', [BillPaymentController::class, 'markPaid'])
+            ->where('billIdentifier', '\d{2}-\d{4}')->name('bills.mark-paid');
+        Route::delete('bill-payments/{billPayment}', [BillPaymentController::class, 'destroy'])->name('bills.payments.destroy');
         // billIdentifier tem barra ("06/2025"): aceita o "/" no último segmento
         Route::get('bills/{account}/{billIdentifier}', [CreditCardBillController::class, 'show'])
             ->where('billIdentifier', '.*')->name('bills.show');

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Finance\Account;
+use App\Models\Finance\BillPayment;
 use App\Models\Finance\FinancialCategory;
 use App\Models\Finance\Transaction;
 use App\Models\Investment\Investment;
@@ -10,6 +11,7 @@ use App\Models\Investment\InvestmentDividend;
 use App\Models\Investment\InvestmentTransaction;
 use App\Models\Investment\InvestmentType;
 use App\Models\User;
+use App\Services\CreditCardBillService;
 use App\Services\InvestmentPositionService;
 use App\Services\OnboardingService;
 use Illuminate\Database\Seeder;
@@ -56,6 +58,7 @@ class DemoSeeder extends Seeder
      */
     private function resetData(User $user): void
     {
+        BillPayment::where('user_id', $user->id)->delete();
         InvestmentDividend::withTrashed()->where('user_id', $user->id)->forceDelete();
         InvestmentTransaction::withTrashed()->where('user_id', $user->id)->forceDelete();
         Investment::withTrashed()->where('user_id', $user->id)->forceDelete();
@@ -90,6 +93,7 @@ class DemoSeeder extends Seeder
             'poupanca' => ['Reserva de Emergência', 'Banco Exemplo', 'savings', 12000, '#2F855A'],
             'cartao' => ['Cartão de Crédito', 'Banco Exemplo', 'credit_card', 0, '#B8956A'],
         ];
+        // Cartão fecha dia 1 e vence dia 10: compras do mês M vão para a fatura que vence em M+1
 
         $accounts = [];
         foreach ($definitions as $key => [$name, $bank, $type, $initialBalance, $color]) {
@@ -97,6 +101,8 @@ class DemoSeeder extends Seeder
                 'user_id' => $user->id, 'name' => $name, 'bank' => $bank, 'type' => $type,
                 'initial_balance' => $initialBalance, 'current_balance' => $initialBalance,
                 'currency' => 'BRL', 'color' => $color, 'is_active' => true,
+                'closing_day' => $type === 'credit_card' ? 1 : null,
+                'due_day' => $type === 'credit_card' ? 10 : null,
             ]);
         }
 
@@ -114,9 +120,8 @@ class DemoSeeder extends Seeder
      */
     private function seedTransactions(User $user, array $accounts, array $categories): void
     {
-        $add = function (array $data) use ($user): void {
-            Transaction::create($data + ['user_id' => $user->id, 'status' => 'completed']);
-        };
+        $add = fn (array $data): Transaction => Transaction::create($data + ['user_id' => $user->id, 'status' => 'completed']);
+        $bills = app(CreditCardBillService::class);
 
         for ($monthsAgo = 5; $monthsAgo >= 0; $monthsAgo--) {
             $month = Carbon::today()->startOfMonth()->subMonths($monthsAgo);
@@ -138,12 +143,9 @@ class DemoSeeder extends Seeder
             $add(['description' => 'Aporte na reserva', 'amount' => 800, 'type' => 'transfer', 'transaction_date' => $day(6),
                 'account_id' => $accounts['corrente']->id, 'transfer_account_id' => $accounts['poupanca']->id, 'payment_method' => 'bank_transfer']);
 
-            // Cartão: fatura identificada por "MM/AAAA" (competência) e vencimento no dia 10 do mês seguinte
-            $card = [
-                'account_id' => $accounts['cartao']->id, 'payment_method' => 'credit_card',
-                'competency_date' => $month->toDateString(), 'bill_identifier' => $month->format('m/Y'),
-                'due_date' => $month->copy()->addMonth()->day(10)->toDateString(),
-            ];
+            // Cartão: fatura calculada pelo fechamento/vencimento do cartão ("MM-AAAA" = mês do vencimento)
+            $card = ['account_id' => $accounts['cartao']->id, 'payment_method' => 'credit_card']
+                + $bills->billFor($accounts['cartao'], $day(15));
             $purchases = [
                 ['Supermercado', round(980 * $variation, 2), 8, 'Mercado'],
                 ['Combustível', round(420 * $variation, 2), 14, 'Transporte'],
@@ -156,13 +158,18 @@ class DemoSeeder extends Seeder
                     'transaction_date' => $day($purchaseDay), 'category_id' => $categories[$category]->id]);
             }
 
-            // Fatura já vencida: paga no vencimento com transferência da corrente para o cartão (R$)
+            // Fatura já vencida: paga no vencimento com boleto da corrente para o cartão, ligada à fatura (R$)
             $dueDate = Carbon::parse($card['due_date']);
             if ($dueDate->lte(Carbon::today())) {
-                $add(['description' => 'Pagamento da fatura '.$card['bill_identifier'], 'type' => 'transfer',
-                    'amount' => round(array_sum(array_column($purchases, 1)), 2), 'transaction_date' => $dueDate->toDateString(),
+                $billTotal = round(array_sum(array_column($purchases, 1)), 2);
+                $payment = $add(['description' => 'Pagamento da fatura '.$card['bill_identifier'].' · Cartão de Crédito', 'type' => 'transfer',
+                    'amount' => $billTotal, 'transaction_date' => $dueDate->toDateString(),
                     'account_id' => $accounts['corrente']->id, 'transfer_account_id' => $accounts['cartao']->id,
-                    'payment_method' => 'bank_transfer']);
+                    'payment_method' => 'Boleto']);
+                BillPayment::create([
+                    'user_id' => $user->id, 'account_id' => $accounts['cartao']->id, 'bill_identifier' => $card['bill_identifier'],
+                    'transaction_id' => $payment->id, 'amount' => $billTotal, 'paid_at' => $dueDate->toDateString(),
+                ]);
             }
         }
     }

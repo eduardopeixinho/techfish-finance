@@ -28,7 +28,7 @@ class AccountController extends Controller
     {
         $this->authorize('create', Account::class);
 
-        $validated = $request->validated();
+        $validated = $this->withBillingDays($request->validated());
         $validated['user_id'] = Auth::id();
         $validated['current_balance'] = $validated['initial_balance'];
 
@@ -60,7 +60,7 @@ class AccountController extends Controller
     {
         $this->authorize('update', $account);
 
-        $account->update($request->validated());
+        $account->update($this->withBillingDays($request->validated()));
         $account->updateBalance();
 
         return redirect()->route('finance.accounts.index')->with('success', 'Conta atualizada com sucesso!');
@@ -78,5 +78,21 @@ class AccountController extends Controller
         $account->delete();
 
         return redirect()->route('finance.accounts.index')->with('success', 'Conta excluída com sucesso!');
+    }
+
+    /**
+     * Dias de fechamento/vencimento só valem para cartão de crédito.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function withBillingDays(array $data): array
+    {
+        if (($data['type'] ?? null) !== 'credit_card') {
+            $data['closing_day'] = null;
+            $data['due_day'] = null;
+        }
+
+        return $data;
     }
 }

@@ -71,6 +71,12 @@ class DemoLoginTest extends TestCase
             ->where('due_date', '>', now()->toDateString())->sum('amount');
         $this->assertEqualsWithDelta(-(float) $openBills, (float) $card->current_balance, 0.01);
 
+        // Faturas vencidas aparecem como pagas (pagamento ligado à fatura); a aberta, não
+        $bills = app(\App\Services\CreditCardBillService::class)->getAvailableBills($card);
+        $this->assertSame('Paga', $bills->last()['status'][0]);
+        $this->assertNotSame('Paga', $bills->first()['status'][0]);
+        $this->assertTrue($bills->every(fn (array $bill): bool => (bool) preg_match('/^\d{2}-\d{4}$/', $bill['bill_identifier'])));
+
         $this->actingAs($demo)->get(route('finance.bills.index'))->assertOk();
         $this->actingAs($demo)->get(route('investment.dashboard'))->assertOk();
     }

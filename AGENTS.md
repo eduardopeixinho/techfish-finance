@@ -26,6 +26,12 @@ MySQL e Redis ficam expostos só em `127.0.0.1` (portas 33060 e 63790), para rod
 - `app/Http/Controllers/Finance/` — painel, transações, contas, categorias; `Finance/Settings/` — tipos de conta, receita, meios de pagamento.
 - `app/Http/Controllers/Investment/` — carteira, transações, proventos, tipos.
 - `app/Http/Controllers/CreditCardBillController.php` — faturas (delega para `CreditCardBillService`).
+  Fatura = cartão + `bill_identifier` "MM-AAAA" (**mês do vencimento**). `CreditCardBillService::billFor()` decide a fatura
+  pela data e por `accounts.closing_day`/`due_day` (compra no dia do fechamento já vai para a próxima); o
+  `TransactionService` aplica em compra/estorno de cartão (o formulário permite escolher outra fatura; edição sem
+  mudar conta/data mantém a fatura, por causa de parcelas importadas). Total = despesas − estornos.
+  Pagamento: `bill_payments` (com `transaction_id` = transferência "Boleto" da conta para o cartão; sem = só marcada
+  como paga, sem mexer em saldo). `BillPaymentService`, `BillPaymentController`, `php artisan bills:mark-paid --until=… --dry-run`.
 - `app/Http/Controllers/Admin/` — RBAC (`RoleController`, `PermissionController`, `UserRoleController`, gate `admin.access`).
   O `UserRoleController` também desativa/reativa usuários (`users.deactivated_at`, gate `admin.users.deactivate`:
   só admin, nunca a si mesmo nem outro admin). Desativado não entra: o callback do Google recusa, o middleware

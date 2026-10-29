@@ -33,6 +33,8 @@ class StoreTransactionRequest extends FormRequest
             'notes' => 'nullable|string',
             'payment_method' => 'nullable|string',
             'tags' => 'nullable|array',
+            // Fatura escolhida no formulário ("MM-AAAA", mês do vencimento); vazio = calculada pela data
+            'bill_identifier' => ['nullable', 'regex:/^(0[1-9]|1[0-2])-\d{4}$/'],
         ];
     }
 
@@ -53,6 +55,7 @@ class StoreTransactionRequest extends FormRequest
             'transaction_date.date' => 'A data deve ser uma data válida.',
             'account_id.required' => 'A conta é obrigatória.',
             'account_id.exists' => 'A conta selecionada não existe.',
+            'bill_identifier.regex' => 'Fatura inválida.',
         ];
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Finance\Account;
 use App\Models\Finance\FinancialCategory;
 use App\Models\Finance\Settings\PaymentMethod;
 use App\Models\Finance\Transaction;
+use App\Services\CreditCardBillService;
 use App\Services\TransactionService;
 use Illuminate\Support\Facades\Auth;
 
@@ -74,8 +75,9 @@ class TransactionController extends Controller
         $incomeCategories = FinancialCategory::forUser(Auth::id())->byType('income')->active()->get();
         $expenseCategories = FinancialCategory::forUser(Auth::id())->byType('expense')->active()->get();
         $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
+        $billOptions = app(CreditCardBillService::class)->selectableBills();
 
-        return view('finance.transactions.create', compact('accounts', 'incomeCategories', 'expenseCategories', 'paymentMethods'));
+        return view('finance.transactions.create', compact('accounts', 'incomeCategories', 'expenseCategories', 'paymentMethods', 'billOptions'));
     }
 
     public function store(StoreTransactionRequest $request)
@@ -100,8 +102,9 @@ class TransactionController extends Controller
         $incomeCategories = FinancialCategory::forUser(Auth::id())->byType('income')->active()->get();
         $expenseCategories = FinancialCategory::forUser(Auth::id())->byType('expense')->active()->get();
         $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
+        $billOptions = app(CreditCardBillService::class)->selectableBills($transaction->bill_identifier);
 
-        return view('finance.transactions.edit', compact('transaction', 'accounts', 'incomeCategories', 'expenseCategories', 'paymentMethods'));
+        return view('finance.transactions.edit', compact('transaction', 'accounts', 'incomeCategories', 'expenseCategories', 'paymentMethods', 'billOptions'));
     }
 
     public function update(UpdateTransactionRequest $request, Transaction $transaction)

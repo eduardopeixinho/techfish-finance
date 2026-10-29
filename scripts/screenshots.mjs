@@ -35,6 +35,10 @@ await page.waitForURL('**/finance/dashboard');
 
 await shot('painel', '/finance/dashboard', { fullPage: true });
 await shot('faturas', '/finance/bills');
+// Uma fatura já paga (a segunda da lista; a primeira ainda está aberta)
+await page.goto(baseUrl + '/finance/bills', { waitUntil: 'networkidle' });
+const paidBill = await page.getByRole('link', { name: 'Ver fatura' }).nth(1).getAttribute('href');
+await shot('fatura', new URL(paidBill, baseUrl).pathname);
 await shot('carteira', '/investment/investments');
 await shot('transacoes', '/finance/transactions');
 

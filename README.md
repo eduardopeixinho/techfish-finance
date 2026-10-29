@@ -22,7 +22,8 @@ faturas de cartão por competência, proventos e relatórios — com os dados de
 **Finanças**
 - Receitas, despesas e transferências entre contas, com categorias
 - Contas (corrente, poupança, cartão, dinheiro) com saldo recalculado a partir das transações
-- Faturas de cartão de crédito por **competência** (mês da fatura) e vencimento
+- Faturas de cartão: cada compra cai na fatura certa pelo **dia de fechamento e de vencimento** do cartão;
+  estornos abatem o total; **pagar fatura** (boleto de uma conta sua) ou marcar o histórico como pago
 - Painel mensal, relatórios e exportação em CSV
 - "Ocultar valores": um clique troca todos os R$ da tela por `R$ •••••`
 
@@ -40,11 +41,11 @@ faturas de cartão por competência, proventos e relatórios — com os dados de
 
 Capturadas da conta de demonstração (dados fictícios).
 
-| Faturas por competência | Carteira de investimentos |
+| Faturas | Fatura paga |
 |---|---|
-| ![Faturas de cartão agrupadas por mês de competência](docs/screenshots/faturas.png) | ![Carteira com posição, cotação e resultado por ativo](docs/screenshots/carteira.png) |
-| **Transações** | **Página inicial** |
-| ![Lista de transações](docs/screenshots/transacoes.png) | ![Página inicial com login Google e demonstração](docs/screenshots/landing.png) |
+| ![Faturas pelo mês do vencimento, com valor em aberto e status](docs/screenshots/faturas.png) | ![Fatura com total, pagamento registrado e gastos por categoria](docs/screenshots/fatura.png) |
+| **Carteira de investimentos** | **Transações** |
+| ![Carteira com posição, cotação e resultado por ativo](docs/screenshots/carteira.png) | ![Lista de transações](docs/screenshots/transacoes.png) |
 
 Para refazer as imagens (com o app rodando e `DEMO_MODE=true`): `scripts/screenshots.mjs`.
 

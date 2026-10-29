@@ -31,6 +31,8 @@ class Account extends Model
         'name',
         'bank',
         'type',
+        'closing_day',
+        'due_day',
         'initial_balance',
         'current_balance',
         'currency',
@@ -44,7 +46,21 @@ class Account extends Model
         'initial_balance' => 'decimal:2',
         'current_balance' => 'decimal:2',
         'is_active' => 'boolean',
+        'closing_day' => 'integer',
+        'due_day' => 'integer',
     ];
+
+    /**
+     * Cartão sem dias configurados (contas antigas): fecha no dia 1 e vence no dia 10.
+     */
+    public const DEFAULT_CLOSING_DAY = 1;
+
+    public const DEFAULT_DUE_DAY = 10;
+
+    public function isCreditCard(): bool
+    {
+        return $this->type === 'credit_card';
+    }
 
     public function user(): BelongsTo
     {
@@ -54,6 +70,14 @@ class Account extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Pagamentos das faturas deste cartão.
+     */
+    public function billPayments(): HasMany
+    {
+        return $this->hasMany(BillPayment::class);
     }
 
     public function transfersFrom(): HasMany

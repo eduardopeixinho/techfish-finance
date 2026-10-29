@@ -137,6 +137,7 @@ class CreditCardBillTest extends TestCase
             'amount' => 100,
             'bill_identifier' => '06/2025',
             'competency_date' => Carbon::parse('2025-06-01'),
+            'due_date' => Carbon::parse('2025-06-08'),
         ]);
 
         Transaction::factory()->create([
@@ -147,6 +148,7 @@ class CreditCardBillTest extends TestCase
             'amount' => 200,
             'bill_identifier' => '07/2025',
             'competency_date' => Carbon::parse('2025-07-01'),
+            'due_date' => Carbon::parse('2025-07-08'),
         ]);
 
         $bills = $this->billService->getAvailableBills($account);
@@ -156,33 +158,48 @@ class CreditCardBillTest extends TestCase
         $this->assertEquals('06/2025', $bills->last()['bill_identifier']);
     }
 
-    public function test_create_bill_for_date(): void
+    /**
+     * Fecha dia 1, vence dia 8 (cartões do dono): a fatura é nomeada pelo mês do vencimento.
+     */
+    public function test_bill_for_closing_on_day_1_due_on_day_8(): void
     {
-        $competencyDate = Carbon::parse('2025-06-15');
+        $card = Account::factory()->make(['type' => 'credit_card', 'closing_day' => 1, 'due_day' => 8]);
 
-        $bill = $this->billService->createBillForDate($competencyDate, 10);
+        $august = $this->billService->billFor($card, Carbon::parse('2025-08-15'));
+        $this->assertSame('09-2025', $august['bill_identifier']);
+        $this->assertSame('2025-09-08', $august['due_date']);
 
-        $this->assertEquals('06/2025', $bill['bill_identifier']);
-        $this->assertEquals('2025-06-01', $bill['competency_date']->format('Y-m-d'));
-        $this->assertEquals('2025-07-10', $bill['due_date']->format('Y-m-d'));
+        // No dia do fechamento já vai para a próxima fatura
+        $this->assertSame('10-2025', $this->billService->billFor($card, Carbon::parse('2025-09-01'))['bill_identifier']);
+        $this->assertSame('09-2025', $this->billService->billFor($card, Carbon::parse('2025-08-31'))['bill_identifier']);
     }
 
-    public function test_determine_competency_for_transaction_before_cutoff(): void
+    /**
+     * Fecha dia 25 e vence dia 5: o vencimento cai no mês seguinte ao fechamento.
+     */
+    public function test_bill_for_closing_after_due_day(): void
     {
-        $transactionDate = Carbon::parse('2025-06-03'); // Antes do dia 5
+        $card = Account::factory()->make(['type' => 'credit_card', 'closing_day' => 25, 'due_day' => 5]);
 
-        $bill = $this->billService->determineCompetencyForTransaction($transactionDate, 5);
-
-        $this->assertEquals('06/2025', $bill['bill_identifier']);
+        $this->assertSame('09-2025', $this->billService->billFor($card, Carbon::parse('2025-08-24'))['bill_identifier']);
+        $this->assertSame('10-2025', $this->billService->billFor($card, Carbon::parse('2025-08-25'))['bill_identifier']);
+        $this->assertSame('2025-10-05', $this->billService->billFor($card, Carbon::parse('2025-08-25'))['due_date']);
     }
 
-    public function test_determine_competency_for_transaction_after_cutoff(): void
+    /**
+     * Dia 31 em mês curto vira o último dia do mês (sem pular para o mês seguinte).
+     */
+    public function test_bill_for_short_months_and_year_turn(): void
     {
-        $transactionDate = Carbon::parse('2025-06-10'); // Depois do dia 5
+        $card = Account::factory()->make(['type' => 'credit_card', 'closing_day' => 31, 'due_day' => 31]);
 
-        $bill = $this->billService->determineCompetencyForTransaction($transactionDate, 5);
+        $february = $this->billService->billFor($card, Carbon::parse('2026-02-10'));
+        $this->assertSame('03-2026', $february['bill_identifier']);
+        $this->assertSame('2026-03-31', $february['due_date']);
 
-        $this->assertEquals('07/2025', $bill['bill_identifier']);
+        $default = Account::factory()->make(['type' => 'credit_card', 'closing_day' => null, 'due_day' => null]);
+        $this->assertSame('01-2026', $this->billService->billFor($default, Carbon::parse('2025-12-20'))['bill_identifier']);
+        $this->assertSame('2026-01-10', $this->billService->billFor($default, Carbon::parse('2025-12-20'))['due_date']);
     }
 
     public function test_bill_summary_includes_category_breakdown(): void
@@ -269,7 +286,7 @@ class CreditCardBillTest extends TestCase
     }
 
     /**
-     * bill_identifier tem barra ("06/2025"): a rota precisa aceitar o segmento com "/".
+     * Dados antigos com barra ("06/2025") continuam abrindo; o título usa o mês do vencimento.
      */
     public function test_bill_page_opens_from_index_link_and_handles_uncategorized(): void
     {
@@ -290,7 +307,7 @@ class CreditCardBillTest extends TestCase
 
         $this->actingAs($user)->get($url)
             ->assertOk()
-            ->assertSee('Fatura de Junho de 2025')
+            ->assertSee('Fatura de Julho de 2025')
             ->assertSee('Compra sem categoria')
             ->assertSee('Sem categoria')
             ->assertDontSee('cdn.jsdelivr.net/npm/chart.js', false);
@@ -304,7 +321,7 @@ class CreditCardBillTest extends TestCase
         $bills = [
             ['05/2025', '2025-05-01', '2025-06-10'], // vencida
             ['06/2025', '2025-06-01', '2025-07-05'], // vence em 4 dias
-            ['07/2025', '2025-07-01', '2025-08-10'], // em dia
+            ['07/2025', '2025-07-01', '2025-08-10'], // em aberto
             ['08/2025', '2025-08-01', '2025-07-01'], // vence hoje: ainda não vencida
         ];
         foreach ($bills as [$identifier, $competency, $due]) {
@@ -318,6 +335,6 @@ class CreditCardBillTest extends TestCase
 
         $this->assertSame(1, substr_count($html, '>Vencida<'));
         $this->assertSame(2, substr_count($html, '>Vence em breve<'));
-        $this->assertSame(1, substr_count($html, '>Em dia<'));
+        $this->assertSame(1, substr_count($html, '>Em aberto</span>')); // selo ("Em aberto" também é título de coluna)
     }
 }

@@ -1,10 +1,11 @@
 {{--
     Campos compartilhados de criar/editar transação.
 
-    Espera: $accounts, $incomeCategories, $expenseCategories, $paymentMethods
-            $transaction (instância nova no create).
+    Espera: $accounts, $incomeCategories, $expenseCategories, $paymentMethods,
+            $billOptions (CreditCardBillService::selectableBills), $transaction (instância nova no create).
     Regras de UI (Alpine):
       - o tipo decide os campos: categoria de receita / de despesa / conta de destino;
+      - compra/estorno em cartão mostra a fatura (vazio = automática, pela data e o fechamento do cartão);
       - campos ocultos ficam `disabled` → não são enviados (evita categoria de receita numa despesa);
       - todos os campos usam old() para não perder o que foi digitado quando a validação falha.
     Valor em R$ (sempre positivo; o tipo define se entra ou sai). Data = data da transação (caixa).
@@ -19,9 +20,12 @@
     ]);
     $invalid = fn (string $field): string => $errors->has($field) ? 'aria-invalid=true aria-describedby='.$field.'-error' : '';
     $selectedType = old('type', $transaction->type ?? 'expense');
+    $billOptions ??= [];
+    $cardIds = $accounts->where('type', 'credit_card')->pluck('id')->map(fn ($id) => (string) $id)->values();
 @endphp
 
-<div x-data="{ type: @js($selectedType) }" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div x-data="{ type: @js($selectedType), accountId: @js((string) old('account_id', $transaction->account_id)), cardIds: @js($cardIds) }"
+     class="grid grid-cols-1 sm:grid-cols-2 gap-6">
     <fieldset class="sm:col-span-2">
         <legend class="ui-label">Tipo<span class="text-red-700" aria-hidden="true"> *</span></legend>
         <div class="grid grid-cols-3 gap-3">
@@ -52,12 +56,24 @@
     </x-ui.field>
 
     <x-ui.field label="Conta" for="account_id" required>
-        <select id="account_id" name="account_id" required class="ui-input" {!! $invalid('account_id') !!}>
+        <select id="account_id" name="account_id" required class="ui-input" x-model="accountId" {!! $invalid('account_id') !!}>
             <option value="">Selecione</option>
             @foreach ($accounts as $account)
                 <option value="{{ $account->id }}" @selected((string) old('account_id', $transaction->account_id) === (string) $account->id)>
                     {{ $account->name }} ({{ $money->format((float) $account->current_balance) }})
                 </option>
+            @endforeach
+        </select>
+    </x-ui.field>
+
+    {{-- Cartão: em qual fatura o lançamento entra --}}
+    <x-ui.field label="Fatura" for="bill_identifier" x-show="cardIds.includes(accountId) && type !== 'transfer'" x-cloak
+                hint="Automática: pela data e pelo dia de fechamento do cartão. Mude só se a compra caiu em outra fatura.">
+        <select id="bill_identifier" name="bill_identifier" class="ui-input"
+                :disabled="! cardIds.includes(accountId) || type === 'transfer'" {!! $invalid('bill_identifier') !!}>
+            <option value="">Automática (pela data)</option>
+            @foreach ($billOptions as $identifier => $label)
+                <option value="{{ $identifier }}" @selected(old('bill_identifier', $transaction->bill_identifier) === $identifier)>Vence em {{ mb_strtolower($label) }}</option>
             @endforeach
         </select>
     </x-ui.field>

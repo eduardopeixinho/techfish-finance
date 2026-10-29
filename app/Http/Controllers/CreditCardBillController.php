@@ -31,10 +31,8 @@ class CreditCardBillController extends Controller
             }
         }
 
-        // Ordenar por competência (mais recente primeiro)
-        usort($bills, function ($a, $b) {
-            return $b['competency_date'] <=> $a['competency_date'];
-        });
+        // Mais recente primeiro (pelo vencimento)
+        usort($bills, fn (array $a, array $b): int => $b['due_date'] <=> $a['due_date']);
 
         return view('finance.bills.index', compact('bills'));
     }
@@ -48,8 +46,10 @@ class CreditCardBillController extends Controller
 
         $summary = $this->billService->getBillSummary($account, $billIdentifier);
         $transactions = $this->billService->getTransactionsByBill($account, $billIdentifier);
+        // Contas de onde o pagamento pode sair (não cartões)
+        $fromAccounts = Account::forUser(auth()->id())->active()->where('type', '!=', 'credit_card')->orderBy('name')->get();
 
-        return view('finance.bills.show', compact('account', 'summary', 'transactions'));
+        return view('finance.bills.show', compact('account', 'summary', 'transactions', 'fromAccounts'));
     }
 
     /**
