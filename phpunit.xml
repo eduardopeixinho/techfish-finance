@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <!-- Chave só para os testes (sem .env, ex.: CI); não é usada em nenhum ambiente real -->
+        <env name="APP_KEY" value="base64:QNQroZCZKp0ylaLrL6g25zkuTB5/dDS5fM1VoXAlMto="/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_DEBUG" value="false" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="LOG_CHANNEL" value="null" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="PULSE_ENABLED" value="false" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="DEMO_MODE" value="false" force="true"/>
+        <!--
+            Dentro do Docker o container exporta APP_ENV=local, DB_CONNECTION=mysql e *_DRIVER=redis.
+            O Laravel lê $_SERVER antes de $_ENV, então <env> sozinho NÃO prevalece: sem estes
+            <server force="true">, a suíte rodava no MySQL de desenvolvimento e o RefreshDatabase
+            apagava o banco local a cada execução. Ver também o guard em tests/TestCase.php.
+        -->
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_DEBUG" value="false" force="true"/>
+        <server name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <server name="CACHE_DRIVER" value="array" force="true"/>
+        <server name="DB_CONNECTION" value="sqlite" force="true"/>
+        <server name="DB_DATABASE" value=":memory:" force="true"/>
+        <server name="LOG_CHANNEL" value="null" force="true"/>
+        <server name="MAIL_MAILER" value="array" force="true"/>
+        <server name="PULSE_ENABLED" value="false" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="SESSION_DRIVER" value="array" force="true"/>
+        <server name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <server name="DEMO_MODE" value="false" force="true"/>
+    </php>
+</phpunit>

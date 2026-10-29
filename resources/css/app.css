@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fade-in suave para o conteúdo principal das páginas */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in {
+        animation: none;
+    }
+}
+
+/* Alpine: esconde elementos com x-cloak até o Alpine iniciar */
+[x-cloak] {
+    display: none !important;
+}
+
+/* ==========================================================================
+   Botões legados (.btn-*) — definição ÚNICA, na paleta do contexto Finanças.
+   Antes: 3 definições concorrentes (aqui, <style> em cada view e Tailwind),
+   todas com !important e cores azul/verde/laranja fora da identidade.
+   Para telas novas, prefira o componente <x-ui.button>.
+   ========================================================================== */
+@layer components {
+    .btn-primary, .btn-secondary, .btn-success, .btn-warning, .btn-danger, .btn-submit, .btn-cancel {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-sm border
+               no-underline transition-colors cursor-pointer
+               focus:outline-none focus-visible:ring-2 focus-visible:ring-finance-accent focus-visible:ring-offset-2 focus-visible:ring-offset-paper
+               disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    /* Ação principal: verde-petróleo sólido */
+    .btn-primary, .btn-submit {
+        @apply bg-finance-base text-paper border-finance-base hover:bg-finance-base/90;
+    }
+
+    /* Ação neutra (Voltar, Cancelar) */
+    .btn-secondary, .btn-cancel {
+        @apply bg-transparent text-ink border-line hover:border-ink/60 hover:bg-ink/[0.03];
+    }
+
+    /* "Ver" / ação positiva secundária */
+    .btn-success {
+        @apply bg-transparent text-finance-base border-finance-base/30 hover:bg-finance-base/5 hover:border-finance-base/60;
+    }
+
+    /* "Editar": âmbar da paleta */
+    .btn-warning {
+        @apply bg-transparent text-[#7A5C33] border-finance-accent/50 hover:bg-finance-accent/10 hover:border-finance-accent;
+    }
+
+    /* Destrutiva: contorno vermelho discreto (o preenchimento chamava atenção demais) */
+    .btn-danger {
+        @apply bg-transparent text-red-700 border-red-200 hover:bg-red-50 hover:border-red-400;
+    }
+}
+
+/* ==========================================================================
+   Formulários (Finanças/Investimentos) — use com <x-ui.field>.
+   .ui-input vale para input, select e textarea.
+   ========================================================================== */
+@layer components {
+    .ui-label {
+        @apply block text-sm font-medium text-ink mb-1.5;
+    }
+
+    .ui-input {
+        @apply w-full rounded-sm border-line bg-white text-ink placeholder-ink-2/50 shadow-none
+               focus:border-finance-base focus:ring-1 focus:ring-finance-base;
+    }
+
+    .ui-input[aria-invalid="true"] {
+        @apply border-red-400 focus:border-red-500 focus:ring-red-500;
+    }
+}

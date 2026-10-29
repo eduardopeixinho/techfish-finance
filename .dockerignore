@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# Docker (apenas arquivos de orquestração, não as configs)
+Dockerfile
+docker-compose.yml
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Composer
+vendor
+
+# Laravel
+storage/logs/*.log
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+.env
+.env.backup
+
+# Build
+public/build
+public/hot
+
+# Testes
+.phpunit.result.cache
+tests/coverage
+
+# Documentação
+README.md
+LICENSE
+
+# OS
+.DS_Store
+Thumbs.db
+
+# OpenCode
+.opencode
+opencode.json

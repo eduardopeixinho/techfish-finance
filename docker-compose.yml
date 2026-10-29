@@ -1,0 +1,103 @@
+services:
+  # Aplicação Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: techfish-finance-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    environment:
+      - APP_ENV=${APP_ENV:-local}
+      - APP_DEBUG=${APP_DEBUG:-true}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL:-http://localhost:8000}
+      - DB_CONNECTION=${DB_CONNECTION:-mysql}
+      - DB_HOST=db
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_DATABASE=${DB_DATABASE:-techfish_finance}
+      - DB_USERNAME=${DB_USERNAME:-techfish}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=null
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - CACHE_DRIVER=${CACHE_DRIVER:-redis}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-redis}
+      - SESSION_DRIVER=${SESSION_DRIVER:-redis}
+      - DEMO_MODE=${DEMO_MODE:-true}
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - techfish-finance-network
+
+  # Banco de Dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: techfish-finance-db
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${DB_FORWARD_PORT:-33060}:3306"   # só localhost: MySQL com senha padrão
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-techfish_finance}
+      MYSQL_USER: ${DB_USERNAME:-techfish}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootsecret}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - techfish-finance-network
+
+  # Redis para Cache/Sessions/Queues
+  redis:
+    image: redis:7-alpine
+    container_name: techfish-finance-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${REDIS_FORWARD_PORT:-63790}:6379"   # só localhost: Redis sem senha
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - techfish-finance-network
+
+  # phpMyAdmin (opcional - para desenvolvimento)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: techfish-finance-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PHPMYADMIN_PORT:-8081}:80"   # só localhost
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
+    depends_on:
+      - db
+    networks:
+      - techfish-finance-network
+
+networks:
+  techfish-finance-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+  redis-data:
+    driver: local

@@ -1,0 +1,28 @@
+/.phpunit.cache
+/node_modules
+# /public/build é VERSIONADO de propósito: o container não tem Node, então quem clona
+# roda o app sem precisar de npm. Rode `npm run build` antes de commitar mudanças de front.
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+
+# Docker: ajustes locais de portas/volumes
+docker-compose.override.yml
+
+# Ferramentas de IA locais (AGENTS.md e .agents/ são versionados)
+/.opencode
+/opencode.json
+/.claude
